@@ -54,16 +54,19 @@ export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInf
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="p-4 sm:p-5">
+        {/* Debug Section: Data ပါလာမလာ စစ်ရန် */}
+        <div className="mb-4 p-2 bg-black text-green-400 text-[10px] overflow-auto max-h-20 rounded">
+          <pre>{JSON.stringify(result.deviceInfo, null, 2)}</pre>
+        </div>
+
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <CopyButton onCopy={handleCopy} title="Copy result" />
-
             <h3 className="font-mono text-sm font-semibold text-gray-900">
               {result.IMEI}
             </h3>
           </div>
-
           <div className="flex items-center gap-1">
             <StatusBadge
               label={result.WrongFormat || result.Incorrect ? 'IMEI မှားယွင်းသည်' : 'IMEI မှန်ကန်သည်'}
