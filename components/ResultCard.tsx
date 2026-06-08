@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import type { ImeiCheckResult } from '@/utils/types';
 import { formatResultForClipboard } from '@/utils/copy-format';
+import { getCleanDeviceName } from '@/utils/device-name';
 import StatusBadge from './StatusBadge';
 import DeviceInfoCard from './DeviceInfoCard';
 import CopyButton from './CopyButton';
@@ -51,16 +53,28 @@ export default function ResultCard({
   isDeviceInfoOpen, 
   onToggleDeviceInfo 
 }: ResultCardProps) {
-  
+  const [deviceTitle, setDeviceTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    // TAC DB မှ နာမည်ယူခြင်း
+    getCleanDeviceName(result.IMEI).then(setDeviceTitle);
+  }, [result.IMEI]);
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(formatResultForClipboard(result));
   };
 
-  // API ကနေ Data ပြန်လာ/မလာ စစ်ဆေးခြင်း
   const hasDeviceInfo = result.deviceInfo && Object.keys(result.deviceInfo).length > 0;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      {/* Device Name Title */}
+      {deviceTitle && (
+        <div className="px-4 pt-4 pb-0">
+          <h2 className="text-base font-bold text-gray-900">{deviceTitle}</h2>
+        </div>
+      )}
+
       <div className="p-4 sm:p-5">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
@@ -111,7 +125,7 @@ export default function ResultCard({
           )}
         </dl>
 
-        {/* Device Info (Conditional rendering) */}
+        {/* Device Info */}
         <div className="mt-4">
           {hasDeviceInfo ? (
             <DeviceInfoCard 
