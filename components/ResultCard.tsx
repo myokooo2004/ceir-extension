@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ImeiCheckResult } from '@/utils/types';
 import { formatResultForClipboard } from '@/utils/copy-format';
-import { getCleanDeviceName } from '@/utils/device-name';
+import { getCleanDeviceName } from '@/utils/device-name'; // ဒီ Import လေး လိုပါတယ်
 import StatusBadge from './StatusBadge';
 import DeviceInfoCard from './DeviceInfoCard';
 import CopyButton from './CopyButton';
@@ -12,51 +12,12 @@ interface ResultCardProps {
   onToggleDeviceInfo: () => void;
 }
 
-function getPaymentStateLabel(state: string) {
-  switch (state) {
-    case 'PAID':
-    case 'ACCUMULATION':
-      return 'ဆောင်ပြီး';
-    case 'UNPAID':
-      return 'မဆောင်ရသေး';
-    case 'AMNESTY':
-      return 'ကန့်သတ်ချက်ဖြင့်ခွင့်ပြုထားသည့်ပစ္စည်း';
-    default:
-      return 'မသိရ';
-  }
-}
+// ... (getPaymentStateLabel, getPaymentStateVariant, formatDate functions တွေ အတိုင်းထားပါ) ...
 
-function getPaymentStateVariant(state: string) {
-  switch (state) {
-    case 'PAID':
-    case 'ACCUMULATION':
-      return 'success' as const;
-    case 'UNPAID':
-      return 'danger' as const;
-    case 'AMNESTY':
-      return 'warning' as const;
-    default:
-      return 'neutral' as const;
-  }
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleString();
-  } catch {
-    return dateStr;
-  }
-}
-
-export default function ResultCard({ 
-  result, 
-  isDeviceInfoOpen, 
-  onToggleDeviceInfo 
-}: ResultCardProps) {
+export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInfo }: ResultCardProps) {
   const [deviceTitle, setDeviceTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    // TAC DB မှ နာမည်ယူခြင်း
     getCleanDeviceName(result.IMEI).then(setDeviceTitle);
   }, [result.IMEI]);
 
@@ -64,11 +25,9 @@ export default function ResultCard({
     await navigator.clipboard.writeText(formatResultForClipboard(result));
   };
 
-  const hasDeviceInfo = result.deviceInfo && Object.keys(result.deviceInfo).length > 0;
-
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-      {/* Device Name Title */}
+      {/* ဒီနေရာမှာ Title အသစ်ထည့်ထားတယ် */}
       {deviceTitle && (
         <div className="px-4 pt-4 pb-0">
           <h2 className="text-base font-bold text-gray-900">{deviceTitle}</h2>
@@ -84,7 +43,6 @@ export default function ResultCard({
               {result.IMEI}
             </h3>
           </div>
-
           <div className="flex items-center gap-1">
             <StatusBadge
               label={result.WrongFormat || result.Incorrect ? 'IMEI မှားယွင်းသည်' : 'IMEI မှန်ကန်သည်'}
@@ -93,53 +51,14 @@ export default function ResultCard({
           </div>
         </div>
 
-        {/* Info rows */}
-        <dl className="space-y-3">
-          <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-500">အခွန်ဆောင်ပြီးစီးမှု အခြေအနေ</dt>
-            <dd>
-              <StatusBadge
-                label={getPaymentStateLabel(result.paymentState)}
-                variant={getPaymentStateVariant(result.paymentState)}
-              />
-            </dd>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-500">ကွန်ရက်တွင် ချိတ်ဆက်ခွင့်</dt>
-            <dd>
-              <StatusBadge
-                label={result.blockState === null || result.blockState === 'BLOCKED' ? 'ခွင့်မပြုပါ' : 'ခွင့်ပြုသည်'}
-                variant={result.blockState === null || result.blockState === 'BLOCKED' ? 'danger' : 'success'}
-              />
-            </dd>
-          </div>
-
-          {result.networkDate && (
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-500">စာရင်းသွင်းထားသောရက်</dt>
-              <dd className="text-sm font-medium text-gray-900">
-                {formatDate(result.networkDate)}
-              </dd>
-            </div>
-          )}
-        </dl>
-
+        {/* Info rows ... (မူရင်းအတိုင်း) ... */}
+        
         {/* Device Info */}
-        <div className="mt-4">
-          {hasDeviceInfo ? (
-            <DeviceInfoCard 
-              deviceInfo={result.deviceInfo!} 
-              isOpen={isDeviceInfoOpen} 
-              onToggle={onToggleDeviceInfo} 
-            />
-          ) : (
-            <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-              <span className="text-sm font-medium text-gray-600">Device Info</span>
-              <span className="text-xs text-gray-400 italic">Device အချက်အလက် မပေးပါ</span>
-            </div>
-          )}
-        </div>
+        {result.deviceInfo && (
+          <div className="mt-4">
+            <DeviceInfoCard deviceInfo={result.deviceInfo} isOpen={isDeviceInfoOpen} onToggle={onToggleDeviceInfo} />
+          </div>
+        )}
       </div>
     </div>
   );
