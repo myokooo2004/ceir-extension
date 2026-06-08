@@ -46,7 +46,12 @@ function formatDate(dateStr: string): string {
   }
 }
 
-export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInfo }: ResultCardProps) {
+export default function ResultCard({ 
+  result, 
+  isDeviceInfoOpen, 
+  onToggleDeviceInfo 
+}: ResultCardProps) {
+  
   const handleCopy = async () => {
     await navigator.clipboard.writeText(formatResultForClipboard(result));
   };
@@ -54,10 +59,13 @@ export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInf
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="p-4 sm:p-5">
+        
         {/* Debug Section: Data ပါလာမလာ စစ်ရန် */}
-        <div className="mb-4 p-2 bg-black text-green-400 text-[10px] overflow-auto max-h-20 rounded">
-          <pre>{JSON.stringify(result.deviceInfo, null, 2)}</pre>
-        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-2 bg-black text-green-400 text-[10px] overflow-auto max-h-20 rounded">
+            <pre>{JSON.stringify(result.deviceInfo, null, 2)}</pre>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
@@ -67,6 +75,7 @@ export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInf
               {result.IMEI}
             </h3>
           </div>
+
           <div className="flex items-center gap-1">
             <StatusBadge
               label={result.WrongFormat || result.Incorrect ? 'IMEI မှားယွင်းသည်' : 'IMEI မှန်ကန်သည်'}
@@ -108,9 +117,17 @@ export default function ResultCard({ result, isDeviceInfoOpen, onToggleDeviceInf
         </dl>
 
         {/* Device Info (collapsible) */}
-        {result.deviceInfo && (
+        {result.deviceInfo && Object.keys(result.deviceInfo).length > 0 ? (
           <div className="mt-4">
-            <DeviceInfoCard deviceInfo={result.deviceInfo} isOpen={isDeviceInfoOpen} onToggle={onToggleDeviceInfo} />
+            <DeviceInfoCard 
+              deviceInfo={result.deviceInfo} 
+              isOpen={isDeviceInfoOpen} 
+              onToggle={onToggleDeviceInfo} 
+            />
+          </div>
+        ) : (
+          <div className="mt-4 text-xs text-gray-400 italic">
+            Device အချက်အလက် မတွေ့ရှိရပါ
           </div>
         )}
       </div>
