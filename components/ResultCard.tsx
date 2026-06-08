@@ -56,17 +56,12 @@ export default function ResultCard({
     await navigator.clipboard.writeText(formatResultForClipboard(result));
   };
 
+  // API ကနေ Data ပြန်လာ/မလာ စစ်ဆေးခြင်း
+  const hasDeviceInfo = result.deviceInfo && Object.keys(result.deviceInfo).length > 0;
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="p-4 sm:p-5">
-        
-        {/* Debug Section: Data ပါလာမလာ စစ်ရန် */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-2 bg-black text-green-400 text-[10px] overflow-auto max-h-20 rounded">
-            <pre>{JSON.stringify(result.deviceInfo, null, 2)}</pre>
-          </div>
-        )}
-
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-1">
@@ -116,20 +111,21 @@ export default function ResultCard({
           )}
         </dl>
 
-        {/* Device Info (collapsible) */}
-        {result.deviceInfo && Object.keys(result.deviceInfo).length > 0 ? (
-          <div className="mt-4">
+        {/* Device Info (Conditional rendering) */}
+        <div className="mt-4">
+          {hasDeviceInfo ? (
             <DeviceInfoCard 
-              deviceInfo={result.deviceInfo} 
+              deviceInfo={result.deviceInfo!} 
               isOpen={isDeviceInfoOpen} 
               onToggle={onToggleDeviceInfo} 
             />
-          </div>
-        ) : (
-          <div className="mt-4 text-xs text-gray-400 italic">
-            Device အချက်အလက် မတွေ့ရှိရပါ
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+              <span className="text-sm font-medium text-gray-600">Device Info</span>
+              <span className="text-xs text-gray-400 italic">Device အချက်အလက် မပေးပါ</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
