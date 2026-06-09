@@ -2,21 +2,29 @@
 
 const TAC_URL = 'https://raw.githubusercontent.com/myokooo2004/tac-db/main/tac.json';
 
-// Fetch လုပ်ပြီးသား Data ကို ခဏသိမ်းထားဖို့ (Performance အတွက်)
 let cachedTacData: Record<string, string> | null = null;
 
 /**
  * နာမည်ထဲက ထပ်နေတဲ့ စကားလုံးတွေကို ဖြုတ်ပေးခြင်း
- * ဥပမာ: "XIAOMI XIAOMI 7A" -> "XIAOMI 7A"
  */
 export function cleanDeviceName(deviceName: string): string {
   if (!deviceName) return "";
-
-  // စာသားတွေကို space နေရာမှာ ခွဲထုတ်ပြီး Set သုံးပြီး ထပ်နေတာဖယ်ထုတ်မယ်
   const parts = deviceName.split(' ');
   const uniqueParts = [...new Set(parts)];
-  
   return uniqueParts.join(' ');
+}
+
+/**
+ * Extension content script ထဲမှာ fetch လုပ်ရင်
+ * Firefox မှာ wrappedJSObject ကနေ page fetch သုံးရတာ
+ * Chrome မှာ plain fetch သုံးနိုင်တယ်
+ */
+async function safeFetch(url: string): Promise<Response> {
+  const w = (window as any).wrappedJSObject;
+  if (w?.fetch) {
+    return w.fetch(url);
+  }
+  return fetch(url);
 }
 
 /**
@@ -24,22 +32,19 @@ export function cleanDeviceName(deviceName: string): string {
  */
 export async function getCleanDeviceName(imei: string): Promise<string | null> {
   try {
-    // Data မရှိသေးမှ Fetch လုပ်မယ်
     if (!cachedTacData) {
-      const response = await fetch(TAC_URL);
+      const response = await safeFetch(TAC_URL);
       if (!response.ok) return null;
       cachedTacData = await response.json();
     }
-    
+
     if (!cachedTacData) return null;
 
-    // IMEI ရဲ့ ရှေ့ 8 လုံး (TAC) ကို ယူပြီး နာမည်ရှာမယ်
     const tac = imei.substring(0, 8);
     const deviceName = cachedTacData[tac];
 
     if (!deviceName) return null;
 
-    // နာမည်ကို သန့်စင်ပြီး ပြန်ပေးမယ်
     return cleanDeviceName(deviceName);
   } catch (error) {
     console.error("Failed to fetch device name:", error);
