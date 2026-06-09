@@ -10,6 +10,16 @@ interface ResultsSectionProps {
   results: ImeiCheckResult[];
 }
 
+function cleanName(raw: string): string {
+  return raw
+    .trim()
+    .split(' ')
+    .filter((w, i, a) => i === 0 || w.toLowerCase() !== a[i - 1].toLowerCase())
+    .join(' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\B\w/g, c => c.toLowerCase());
+}
+
 export default function ResultsSection({ results }: ResultsSectionProps) {
   const [deviceInfoOpen, setDeviceInfoOpen] = useState<Record<string, boolean>>({});
   const [allExpanded, setAllExpanded] = useState(false);
@@ -21,27 +31,43 @@ export default function ResultsSection({ results }: ResultsSectionProps) {
 
     (async () => {
       try {
-        const res = await fetch(TAC_URL);
-        if (!res.ok || dead) return;
-        const db = await res.json();
+        const db: Record<string, any> = await new Promise((resolve, reject) => {
+          browser.runtime.sendMessage(
+            { type: 'FETCH_TAC_DB', url: TAC_URL },
+            (response: any) => {
+              if (browser.runtime.lastError) {
+                reject(browser.runtime.lastError);
+              } else if (response?.error) {
+                reject(new Error(response.error));
+              } else {
+                resolve(response?.data ?? {});
+              }
+            }
+          );
+        });
+
+        if (dead) return;
+
         const map: Record<string, string> = {};
         results.forEach((item) => {
           const tac = (item.IMEI || '').substring(0, 8);
-          if (db[tac]) {
-            const raw = (db[tac].model || db[tac] || '').toString().trim();
-            const cleaned = raw
-              .split(' ')
-              .filter((w: string, i: number, a: string[]) =>
-                i === 0 || w.toLowerCase() !== a[i - 1].toLowerCase()
-              )
-              .join(' ');
-            map[item.IMEI] = cleaned
-              .replace(/\b\w/g, (c: string) => c.toUpperCase())
-              .replace(/\B\w/g, (c: string) => c.toLowerCase());
+          const entry = db[tac];
+          if (!entry) return;
+
+          let raw = '';
+          if (typeof entry === 'string') {
+            raw = entry;
+          } else if (typeof entry === 'object') {
+            raw = entry.model ?? entry.name ?? entry.brand ?? '';
           }
+
+          if (raw) map[item.IMEI] = cleanName(raw);
         });
+
         if (!dead) setTacMap(map);
-      } catch (err) {}
+      } catch (err) {
+        console.error('[CEIR] TAC fetch failed:', err);
+      }
     })();
 
     return () => { dead = true; };
