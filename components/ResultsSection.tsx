@@ -31,22 +31,9 @@ export default function ResultsSection({ results }: ResultsSectionProps) {
 
     (async () => {
       try {
-        const db: Record<string, any> = await new Promise((resolve, reject) => {
-          browser.runtime.sendMessage(
-            { type: 'FETCH_TAC_DB', url: TAC_URL },
-            (response: any) => {
-              if (browser.runtime.lastError) {
-                reject(browser.runtime.lastError);
-              } else if (response?.error) {
-                reject(new Error(response.error));
-              } else {
-                resolve(response?.data ?? {});
-              }
-            }
-          );
-        });
-
-        if (dead) return;
+        const res = await fetch(TAC_URL);
+        if (!res.ok || dead) return;
+        const db = await res.json();
 
         const map: Record<string, string> = {};
         results.forEach((item) => {
