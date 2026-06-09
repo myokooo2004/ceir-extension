@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ResultCard from '@/components/ResultCard';
 import CopyButton from '@/components/CopyButton';
 import { formatAllResultsForClipboard } from '@/utils/copy-format';
 import type { ImeiCheckResult } from '@/utils/types';
+
+const TAC_URL = 'https://raw.githubusercontent.com/myokooo2004/tac-db/main/tac.json';
 
 interface ResultsSectionProps {
   results: ImeiCheckResult[];
@@ -11,6 +13,39 @@ interface ResultsSectionProps {
 export default function ResultsSection({ results }: ResultsSectionProps) {
   const [deviceInfoOpen, setDeviceInfoOpen] = useState<Record<string, boolean>>({});
   const [allExpanded, setAllExpanded] = useState(false);
+  const [tacMap, setTacMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!results || !results.length) return;
+    let dead = false;
+
+    (async () => {
+      try {
+        const res = await fetch(TAC_URL);
+        if (!res.ok || dead) return;
+        const db = await res.json();
+        const map: Record<string, string> = {};
+        results.forEach((item) => {
+          const tac = (item.IMEI || '').substring(0, 8);
+          if (db[tac]) {
+            const raw = (db[tac].model || db[tac] || '').toString().trim();
+            const cleaned = raw
+              .split(' ')
+              .filter((w: string, i: number, a: string[]) =>
+                i === 0 || w.toLowerCase() !== a[i - 1].toLowerCase()
+              )
+              .join(' ');
+            map[item.IMEI] = cleaned
+              .replace(/\b\w/g, (c: string) => c.toUpperCase())
+              .replace(/\B\w/g, (c: string) => c.toLowerCase());
+          }
+        });
+        if (!dead) setTacMap(map);
+      } catch (err) {}
+    })();
+
+    return () => { dead = true; };
+  }, [results]);
 
   const toggleDeviceInfo = useCallback((imei: string) => {
     setDeviceInfoOpen((prev) => ({ ...prev, [imei]: !prev[imei] }));
@@ -40,14 +75,11 @@ export default function ResultsSection({ results }: ResultsSectionProps) {
         </h2>
         {results.some((r) => r.deviceInfo) && (
           <div className="flex items-stretch overflow-hidden rounded-md border border-gray-300 bg-white divide-x divide-gray-300">
-            {/* Copy All */}
             <CopyButton
               onCopy={copyAll}
               title="Copy all results"
               className="rounded-none! p-2! transition-colors hover:bg-gray-50"
             />
-
-            {/* Expand / Collapse All */}
             <button
               type="button"
               onClick={toggleAll}
@@ -77,6 +109,7 @@ export default function ResultsSection({ results }: ResultsSectionProps) {
           <ResultCard
             key={result.IMEI}
             result={result}
+            deviceTitle={tacMap[result.IMEI] ?? null}
             isDeviceInfoOpen={!!deviceInfoOpen[result.IMEI]}
             onToggleDeviceInfo={() => toggleDeviceInfo(result.IMEI)}
           />
