@@ -39,8 +39,8 @@ jobs:
 
       - name: Rename zips to fixed filenames
         run: |
-          mv .output/*-chrome.zip .output/ceir-extension-chrome.zip 2>/dev/null || true
-          mv .output/*-firefox.zip .output/ceir-extension-firefox.zip 2>/dev/null || true
+          mv .output/*chrome.zip .output/ceir-extension-chrome.zip 2>/dev/null || true
+          mv .output/*firefox.zip .output/ceir-extension-firefox.zip 2>/dev/null || true
 
       - name: Upload zips to GitHub Release
         env:
