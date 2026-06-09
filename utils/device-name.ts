@@ -2,16 +2,24 @@
 
 const TAC_URL = 'https://raw.githubusercontent.com/myokooo2004/tac-db/main/tac.json';
 
-let cachedTacData: Record<string, string> | null = null;
+let cachedTacData: Record<string, any> | null = null;
 
 /**
  * နာမည်ထဲက ထပ်နေတဲ့ စကားလုံးတွေကို ဖြုတ်ပေးခြင်း
+ * Adjacent duplicates ဖြုတ်ပြီး Title Case လုပ်မယ်
+ * ဥပမာ: "XIAOMI xiaomi 7A" -> "Xiaomi 7A"
  */
 export function cleanDeviceName(deviceName: string): string {
   if (!deviceName) return "";
-  const parts = deviceName.split(' ');
-  const uniqueParts = [...new Set(parts)];
-  return uniqueParts.join(' ');
+
+  const cleaned = deviceName.trim()
+    .split(" ")
+    .filter((w, i, a) => i === 0 || w.toLowerCase() !== a[i - 1].toLowerCase())
+    .join(" ");
+
+  return cleaned
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\B\w/g, c => c.toLowerCase());
 }
 
 /**
@@ -41,11 +49,18 @@ export async function getCleanDeviceName(imei: string): Promise<string | null> {
     if (!cachedTacData) return null;
 
     const tac = imei.substring(0, 8);
-    const deviceName = cachedTacData[tac];
+    const entry = cachedTacData[tac];
 
-    if (!deviceName) return null;
+    if (!entry) return null;
 
-    return cleanDeviceName(deviceName);
+    // JSON မှာ object ဖြစ်နိုင်တယ် { model: "..." } သို့မဟုတ် plain string
+    const raw = typeof entry === 'string'
+      ? entry
+      : (entry as any).model ?? '';
+
+    if (!raw) return null;
+
+    return cleanDeviceName(raw);
   } catch (error) {
     console.error("Failed to fetch device name:", error);
     return null;
