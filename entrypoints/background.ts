@@ -1,7 +1,7 @@
 export default defineBackground(() => {
-  console.log('CEIR Extension background started', { id: browser.runtime.id });
+  console.log('CEIR background ready', { id: browser.runtime.id });
 
-  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
     if (message.type === 'FETCH_TAC_DB') {
       fetch(message.url)
         .then(res => res.json())
